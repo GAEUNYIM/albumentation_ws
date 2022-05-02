@@ -58,16 +58,17 @@ They surely help you to augment your source data like a monkey magic! :)
 name_augmentation = "rotated" # Augmentation type # TODO;
 
 # Path for images, and annotations 
-path_source = "../../Media/valid/per_case/blade/" # Path where source images located # TODO;
-path_dest = "../../Media/valid/per_case/" + name_augmentation + "/" # Path where augmented images located # TODO;
+path_source = "../../../Media/v0/valid/per_case/blade/" # Path where source images located # TODO;
+path_dest = "../../../Media/v0/valid/per_case/" + name_augmentation + "/" # Path where augmented images located # TODO;
+os.makedirs(path_dest)
 
 path_source_images = path_source + "images" 
 path_source_annotations = path_source + "annotations"
 
 path_dest_images = path_dest + "images"
 path_dest_annotations = path_dest + "annotations" 
-
-
+os.makedirs(path_dest_images)
+os.makedirs(path_dest_annotations)
 
 # Step / Open the original json annotations file
 old_ann_filename = 'coco_annotations.json' # TODO;
@@ -104,7 +105,7 @@ transform = A.Compose([ # TODO;
     # A.Resize(height=height, width=width),
     # A.ShiftScaleRotate(shift_limit=0, scale_limit=0, rotate_limit=15, p=1),
     # A.HorizontalFlip(p=1)
-    A.SafeRotate(limit=[10, 10], p=1)
+    A.Rotate(limit=[-15, 15], p=1)
     ],
     bbox_params = A.BboxParams(format='coco', min_visibility=0, label_fields=['category_ids']),
 )
@@ -177,8 +178,8 @@ for file_name in list_images:
     # Append new "images" dictionary info; The otherse are maintained inside
     img_dict = {
         "file_name": file_name,
-        "height": 512,
-        "width": 512,
+        "height": 300,
+        "width": 300,
         "id": image_id
     }
     new_img_info.append(img_dict)
@@ -198,16 +199,16 @@ for file_name in list_images:
         new_annot_info.append(annot_dict)
         annot_id += 1 
 
-    if file_name == '191228_112311_507.jpg': # '191228_102857_995.jpg':
-        print("original bboxes : ", bboxes)
-        print("original categories : ", category_ids)
-        visualize_image_with_bbox(image, bboxes, 'original.jpg')
+    # if file_name == '191228_112311_507.jpg': # '191228_102857_995.jpg':
+    #     print("original bboxes : ", bboxes)
+    #     print("original categories : ", category_ids)
+    #     visualize_image_with_bbox(image, bboxes, 'original.jpg')
 
-        print("augmented bbox : ", augmentation_bboxes)
-        visualize_image_with_bbox(augmentation_img, augmentation_bboxes, 'augmented.jpg')
+    #     print("augmented bbox : ", augmentation_bboxes)
+    #     visualize_image_with_bbox(augmentation_img, augmentation_bboxes, 'augmented.jpg')
     
-    if len(bboxes) != len(augmentation_bboxes):
-        print(file_name, " at id ", image_id)
+    # if len(bboxes) != len(augmentation_bboxes):
+    #     print(file_name, " at id ", image_id)
 
 # print("annot_info[0] : ", annot_info[0])
 js_dicts_new['images'] = new_img_info

@@ -6,7 +6,7 @@ import os
 import json
 import cv2
 
-img_dir = '../../Media/v2/valid/img_300x300'
+img_dir = '../../Media/v2/valid/img_300x300_114_padded'
 coco_path = '../../Media/v2/valid/annotations/empty_coco_annotations.json'
 
 custom_coco_dict = {}
