@@ -13,50 +13,16 @@ from itertools import groupby
 ##### Description : What is this code for? #####
 ################################################
 
-This code will help you to augment your data with rotating images.
+This code will help you to augment your data with resize, and crop images.
 Additionally, you can also create a _new annotation file_ by modifying the extra parameters 
 regarding the images that are affected by the rotation (height, width, and box).
 Here, we are supporting only bbox, but not also segmentation for the extra parameters.
 
-########################################################
-##### Detailed Guide : Please give attention here! #####
-########################################################
-
-If you are trying to excute this script for augmentation, please read this guide carefllly.
-You may want to make sure the file paths by setting your customized paths.
-If you have a strong understands of the following structure, then everything will go fine :)
-
-1. Every data directory has 3 main subdirectories. 
-Let's say you will augment '1_blade' data as source. 
-Then, you might have the file structure below.
-
-- 1_blade
------- annotations
------------ annotations_1_blade.json
------- images
------------ xxx{img_suffix}.jpg
------------ yyy{img_suffix}.jpg
------------ zzz{img_suffix}.jpg
-
-2. By following the convention above, create a new target directory with appropriate name.
-Let's say you will augment the sources by applying '2 main augmentation skills' below.
-
-- rotation between (-15, 15) degrees
-- resizing into 300 X 300
-
-Then, please create following directories on your terminal. (Use '$ mkdir' commands)
-
-- 1_blade_rotated_15_resized (This should be the appropriate name)
------- annotations
------- images
-
-3. Finally, set our parameters below. 
-They surely help you to augment your source data like a monkey magic! :)
 '''
 
 
 # Step / Which type of augmentation do you want to apply? (Important! Will be repeatedly used below) 
-name_augmentation = "resize_169x300" # Augmentation type # TODO;
+name_augmentation = "resize_300x533_randcrop_300x169" # Augmentation type # TODO;
 
 # Path for source images, and annotations, and masks
 path_source = "../../../Media/v0/valid/" # Path where source images located # TODO;
@@ -106,10 +72,11 @@ list_images = os.listdir(path_source_images)
 
 
 # Construct an augmentation pipeline constructed
-width, height = 169, 300 # TODO;
+width, height = 300, 169 # TODO;
 
 transform = A.Compose([ # TODO;
-    A.Resize(height=height, width=width, interpolation=3),
+    A.Resize(height=533, width=300, interpolation=3),
+    A.RandomCrop(height=height, width=width, p=1),
     # A.ShiftScaleRotate(shift_limit=0, scale_limit=0, rotate_limit=15, p=1),
     # A.HorizontalFlip(p=1)
     # A.Rotate(limit=[15, 15], p=1)
