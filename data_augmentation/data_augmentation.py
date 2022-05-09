@@ -2,6 +2,7 @@ import albumentations as A
 import cv2
 import os
 import json
+from cv2 import BORDER_CONSTANT
 from pycocotools.coco import COCO
 import pycocotools.mask as pm
 import numpy as np
@@ -13,50 +14,16 @@ from itertools import groupby
 ##### Description : What is this code for? #####
 ################################################
 
-This code will help you to augment your data with rotating images.
+This code will help you to augment your data with resize, and crop images.
 Additionally, you can also create a _new annotation file_ by modifying the extra parameters 
 regarding the images that are affected by the rotation (height, width, and box).
 Here, we are supporting only bbox, but not also segmentation for the extra parameters.
 
-########################################################
-##### Detailed Guide : Please give attention here! #####
-########################################################
-
-If you are trying to excute this script for augmentation, please read this guide carefllly.
-You may want to make sure the file paths by setting your customized paths.
-If you have a strong understands of the following structure, then everything will go fine :)
-
-1. Every data directory has 3 main subdirectories. 
-Let's say you will augment '1_blade' data as source. 
-Then, you might have the file structure below.
-
-- 1_blade
------- annotations
------------ annotations_1_blade.json
------- images
------------ xxx{img_suffix}.jpg
------------ yyy{img_suffix}.jpg
------------ zzz{img_suffix}.jpg
-
-2. By following the convention above, create a new target directory with appropriate name.
-Let's say you will augment the sources by applying '2 main augmentation skills' below.
-
-- rotation between (-15, 15) degrees
-- resizing into 300 X 300
-
-Then, please create following directories on your terminal. (Use '$ mkdir' commands)
-
-- 1_blade_rotated_15_resized (This should be the appropriate name)
------- annotations
------- images
-
-3. Finally, set our parameters below. 
-They surely help you to augment your source data like a monkey magic! :)
 '''
 
 
 # Step / Which type of augmentation do you want to apply? (Important! Will be repeatedly used below) 
-name_augmentation = "resize_169x300" # Augmentation type # TODO;
+name_augmentation = "resize_centercrop_zero_paddded" # Augmentation type # TODO;
 
 # Path for source images, and annotations, and masks
 path_source = "../../../Media/v0/valid/" # Path where source images located # TODO;
@@ -66,14 +33,14 @@ path_source_masks = path_source + "masks"
 
 # Path for destination images, and annotations, and masks
 path_dest = "../../../Media/v5/valid/" + name_augmentation + "/" # Path where augmented images located # TODO;
-os.makedirs(path_dest)
+# os.makedirs(path_dest)
 
 path_dest_images = path_dest + "images"
 path_dest_annotations = path_dest + "annotations" 
 path_dest_masks = path_dest + "masks" 
-os.makedirs(path_dest_images)
-os.makedirs(path_dest_annotations)
-os.makedirs(path_dest_masks)
+# os.makedirs(path_dest_images)
+# os.makedirs(path_dest_annotations)
+# os.makedirs(path_dest_masks)
 
 
 
@@ -106,10 +73,13 @@ list_images = os.listdir(path_source_images)
 
 
 # Construct an augmentation pipeline constructed
-width, height = 169, 300 # TODO;
+width, height = 300, 300 # TODO;
 
 transform = A.Compose([ # TODO;
-    A.Resize(height=height, width=width, interpolation=3),
+    A.Resize(width=300, height=533, interpolation=3),
+    A.CenterCrop(width=300,height=168, p=1),
+    A.CropAndPad(px=(66, 0, 66, 0), pad_mode=BORDER_CONSTANT, pad_cval=0, 
+            keep_size=False, sample_independently=False, p=1.0)
     # A.ShiftScaleRotate(shift_limit=0, scale_limit=0, rotate_limit=15, p=1),
     # A.HorizontalFlip(p=1)
     # A.Rotate(limit=[15, 15], p=1)
@@ -231,8 +201,8 @@ for file_name in list_images:
     # Append new "images" dictionary info; The otherse are maintained inside
     img_dict = {
         "file_name": file_name,
-        "height": height,
-        "width": width,
+        "height": 300,
+        "width": 300,
         "id": image_id
     }
     new_img_info.append(img_dict)
@@ -264,7 +234,7 @@ for file_name in list_images:
     mask_name = file_name.replace('.jpg', '.png')
 
     mask = np.max(np.stack([coco.annToMask(ann) * ann["category_id"] * 100 for ann in annot_dicts]), axis=0)
-    
+
     if file_name == '191228_105517_252.jpg': # TODO; Test with your own figure!
         cv2.imwrite("hi.png", mask) # For test;
 
@@ -272,16 +242,6 @@ for file_name in list_images:
     cv2.imwrite(path_dest_images + "/" + file_name, augmentation_img) # TODO;
     cv2.imwrite(path_dest_masks + "/" + mask_name, augmentation_mask) # TODO;
 
-    # if file_name == '191228_112311_507.jpg': # '191228_102857_995.jpg':
-    #     print("original bboxes : ", bboxes)
-    #     print("original categories : ", category_ids)
-    #     visualize_image_with_bbox(image, bboxes, 'original.jpg')
-
-    #     print("augmented bbox : ", augmentation_bboxes)
-    #     visualize_image_with_bbox(augmentation_img, augmentation_bboxes, 'augmented.jpg')
-    
-    # if len(bboxes) != len(augmentation_bboxes):
-    #     print(file_name, " at id ", image_id)
 
 # print("annot_info[0] : ", annot_info[0])
 js_dicts_new['images'] = new_img_info
