@@ -14,19 +14,19 @@ from itertools import groupby
 ##### Description : What is this code for? #####
 ################################################
 
-This code will help you to augment your data with resize, and crop images.
-Additionally, you can also create a _new annotation file_ by modifying the extra parameters 
-regarding the images that are affected by the rotation (height, width, and box).
-Here, we are supporting only bbox, but not also segmentation for the extra parameters.
+This code will help you to augment your data with various transformations.
+Augmentation of bbox based on segmentation is more accurate than based on bbox.
+Here, you can apply any augmenetaion.
 
 '''
 
 
-# Step / Which type of augmentation do you want to apply? (Important! Will be repeatedly used below) 
-name_augmentation = "resize_centercrop_zero_paddded" # Augmentation type # TODO;
+
+# Step /
+name_augmentation = "rotated2" # Augmentation type # TODO;
 
 # Path for source images, and annotations, and masks
-path_source = "../../../Media/v0/valid/" # Path where source images located # TODO;
+path_source = "../../../Media/v0/valid/per_case/blade/" # Path where source images located # TODO;
 path_source_images = path_source + "images" 
 path_source_annotations = path_source + "annotations"
 path_source_masks = path_source + "masks" 
@@ -76,13 +76,13 @@ list_images = os.listdir(path_source_images)
 width, height = 300, 300 # TODO;
 
 transform = A.Compose([ # TODO;
-    A.Resize(width=300, height=533, interpolation=3),
-    A.CenterCrop(width=300,height=168, p=1),
-    A.CropAndPad(px=(66, 0, 66, 0), pad_mode=BORDER_CONSTANT, pad_cval=0, 
-            keep_size=False, sample_independently=False, p=1.0)
+    # A.Resize(width=300, height=300, interpolation=3),
+    # A.CenterCrop(width=300,height=168, p=1),
+    # A.CropAndPad(px=(66, 0, 66, 0), pad_mode=BORDER_CONSTANT, pad_cval=0, 
+    #         keep_size=False, sample_independently=False, p=1.0)
     # A.ShiftScaleRotate(shift_limit=0, scale_limit=0, rotate_limit=15, p=1),
     # A.HorizontalFlip(p=1)
-    # A.Rotate(limit=[15, 15], p=1)
+    A.Rotate(limit=[15, 15], p=1)
     ],
     bbox_params = A.BboxParams(format='coco', min_visibility=0, label_fields=['category_ids']),
 )
@@ -146,7 +146,6 @@ def binary_mask_to_rle(binary_mask):
         counts.append(len(list(elements)))
     return rle
 
-
 coco = COCO(path_source_annotations + "/" + old_ann_filename)
 
 # Step / Augment and Store new images, massks, annotations into a new directory
@@ -156,12 +155,8 @@ for file_name in list_images:
 
     image_id = ids_dict_with_file_names[file_name]
 
-    # print("image_id: ", image_id)
-
     # Read original data before augmentation
     image = cv2.imread(path_source_images + '/' + file_name)
-    # segm_name = file_name.replace('jpg', 'png')
-    # segm = cv2.imread(path_source_masks + '/' + segm_name)
     bboxes = bboxes_dict_with_key_id[image_id]
     category_ids = category_ids_dict_with_key_id[image_id]
 
@@ -186,23 +181,15 @@ for file_name in list_images:
         bbox = list(pm.toBbox(encoded_ground_truth))
 
         segmentation = binary_mask_to_rle(fortran_ground_truth_binary_mask)
-        # print(segmentation)
 
         augmentation_zip[ann_id] = [cat_id, area, bbox, segmentation]
-
-    # Convert nd array into segmentation form
-    # fortran_ground_truth_binary_segm = np.asfortranarray(augmentation_mask[:,:,0])
-    # encoded_ground_truth = mask.encode(fortran_ground_truth_binary_segm)
-    # ground_truth_area = mask.area(encoded_ground_truth)
-    # ground_truth_bbox = mask.toBbox(encoded_ground_truth)
-    # contours = measure.find_contours(fortran_ground_truth_binary_segm, 0.5)
 
 
     # Append new "images" dictionary info; The otherse are maintained inside
     img_dict = {
         "file_name": file_name,
-        "height": 300,
-        "width": 300,
+        "height": 300, # TODO; 
+        "width": 300, # TODO;
         "id": image_id
     }
     new_img_info.append(img_dict)
@@ -230,17 +217,16 @@ for file_name in list_images:
         new_annot_info.append(annot_dict)
         annot_dicts.append(annot_dict)
         annot_id += 1 
-
-    mask_name = file_name.replace('.jpg', '.png')
-
-    mask = np.max(np.stack([coco.annToMask(ann) * ann["category_id"] * 100 for ann in annot_dicts]), axis=0)
-
-    if file_name == '191228_105517_252.jpg': # TODO; Test with your own figure!
-        cv2.imwrite("hi.png", mask) # For test;
-
+        
     # Write new data after augmentation
     cv2.imwrite(path_dest_images + "/" + file_name, augmentation_img) # TODO;
-    cv2.imwrite(path_dest_masks + "/" + mask_name, augmentation_mask) # TODO;
+
+    # TODO; Activate below if you want masks/ directory
+    # mask_name = file_name.replace('.jpg', '.png') 
+    # mask = np.max(np.stack([coco.annToMask(ann) * ann["category_id"] * 100 for ann in annot_dicts]), axis=0)
+    # if file_name == '191228_105517_252.jpg': # TODO; Test with your own figure!
+    #     cv2.imwrite("hi.png", mask) # For test;
+    # cv2.imwrite(path_dest_masks + "/" + mask_name, augmentation_mask)
 
 
 # print("annot_info[0] : ", annot_info[0])

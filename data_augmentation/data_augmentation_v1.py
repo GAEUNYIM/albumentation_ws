@@ -99,10 +99,10 @@ list_images = os.listdir(path_source_images)
 
 
 # Construct an augmentation pipeline constructed
-# height, width = 300, 300 # TODO;
+height, width = 300, 300 # TODO;
 
 transform = A.Compose([ # TODO;
-    # A.Resize(height=height, width=width),
+    A.Resize(height=height, width=width),
     # A.ShiftScaleRotate(shift_limit=0, scale_limit=0, rotate_limit=15, p=1),
     # A.HorizontalFlip(p=1)
     A.Rotate(limit=[-15, 15], p=1)

@@ -190,13 +190,6 @@ for file_name in list_images:
 
         augmentation_zip[ann_id] = [cat_id, area, bbox, segmentation]
 
-    # Convert nd array into segmentation form
-    # fortran_ground_truth_binary_segm = np.asfortranarray(augmentation_mask[:,:,0])
-    # encoded_ground_truth = mask.encode(fortran_ground_truth_binary_segm)
-    # ground_truth_area = mask.area(encoded_ground_truth)
-    # ground_truth_bbox = mask.toBbox(encoded_ground_truth)
-    # contours = measure.find_contours(fortran_ground_truth_binary_segm, 0.5)
-
 
     # Append new "images" dictionary info; The otherse are maintained inside
     img_dict = {
