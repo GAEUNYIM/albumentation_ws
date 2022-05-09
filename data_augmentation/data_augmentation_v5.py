@@ -2,6 +2,7 @@ import albumentations as A
 import cv2
 import os
 import json
+from cv2 import BORDER_CONSTANT
 from pycocotools.coco import COCO
 import pycocotools.mask as pm
 import numpy as np
@@ -22,7 +23,7 @@ Here, we are supporting only bbox, but not also segmentation for the extra param
 
 
 # Step / Which type of augmentation do you want to apply? (Important! Will be repeatedly used below) 
-name_augmentation = "resize_300x533_randcrop_300x169" # Augmentation type # TODO;
+name_augmentation = "resize_300x533_centercrop" # Augmentation type # TODO;
 
 # Path for source images, and annotations, and masks
 path_source = "../../../Media/v0/valid/" # Path where source images located # TODO;
@@ -75,15 +76,16 @@ list_images = os.listdir(path_source_images)
 width, height = 300, 169 # TODO;
 
 transform = A.Compose([ # TODO;
-    A.Resize(height=533, width=300, interpolation=3),
-    A.RandomCrop(height=height, width=width, p=1),
+    A.Resize(width=300, height=533, interpolation=3),
+    A.CenterCrop(height=height, width=width, p=1),
+    # A.CropAndPad(px=(54600, 0, 54600, 0), pad_mode=BORDER_CONSTANT, pad_cval=0, 
+    #         keep_size=False, sample_independently=False, p=1.0)
     # A.ShiftScaleRotate(shift_limit=0, scale_limit=0, rotate_limit=15, p=1),
     # A.HorizontalFlip(p=1)
     # A.Rotate(limit=[15, 15], p=1)
     ],
     bbox_params = A.BboxParams(format='coco', min_visibility=0, label_fields=['category_ids']),
 )
-
 
 # Define img & annotation id
 img_id = 1
