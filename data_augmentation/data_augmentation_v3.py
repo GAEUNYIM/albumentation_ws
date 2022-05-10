@@ -56,14 +56,14 @@ They surely help you to augment your source data like a monkey magic! :)
 
 
 # Step / Which type of augmentation do you want to apply? (Important! Will be repeatedly used below) 
-name_augmentation = "rotated" # Augmentation type # TODO;
+name_augmentation = "valid" # Augmentation type # TODO;
 
 
 
 # Path for images, and annotations 
-path_source = "../../../Media/v0.1/valid/per_case/rotated/" # Path where source images located # TODO;
-path_dest = "../../../Media/v0.3/valid/per_case/" + name_augmentation + "/" # Path where augmented images located # TODO;
-os.makedirs(path_dest)
+path_source = "../../../Media/v0/valid/" # Path where source images located # TODO;
+path_dest = "../../../Media/v0.3/" + name_augmentation + "/" # Path where augmented images located # TODO;
+# os.makedirs(path_dest)
 
 path_source_images = path_source + "images" 
 path_source_annotations = path_source + "annotations"
@@ -212,8 +212,8 @@ for file_name in list_images:
     # Append new "images" dictionary info; The otherse are maintained inside
     img_dict = {
         "file_name": file_name,
-        "height": 512,
-        "width": 512,
+        "height": 300,
+        "width": 300,
         "id": image_id
     }
     new_img_info.append(img_dict)

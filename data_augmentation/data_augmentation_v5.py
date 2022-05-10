@@ -7,40 +7,71 @@ from pycocotools.coco import COCO
 import pycocotools.mask as pm
 import numpy as np
 from itertools import groupby
-# from skimage import measure
 
 '''
 ################################################
 ##### Description : What is this code for? #####
 ################################################
 
-This code will help you to augment your data with resize, and crop images.
+This code will help you to augment your data with padding images.
 Additionally, you can also create a _new annotation file_ by modifying the extra parameters 
-regarding the images that are affected by the rotation (height, width, and box).
+regarding the images that are affected by the padding (height, width, and box).
 Here, we are supporting only bbox, but not also segmentation for the extra parameters.
 
+########################################################
+##### Detailed Guide : Please give attention here! #####
+########################################################
+
+If you are trying to excute this script for augmentation, please read this guide carefllly.
+You may want to make sure the file paths by setting your customized paths.
+If you have a strong understands of the following structure, then everything will go fine :)
+
+1. Every data directory has 3 main subdirectories. 
+Let's say you will augment '1_blade' data as source. 
+Then, you might have the file structure below.
+
+- 1_blade
+------ annotations
+----------- annotations_1_blade.json
+------ images
+----------- xxx{img_suffix}.jpg
+----------- yyy{img_suffix}.jpg
+----------- zzz{img_suffix}.jpg
+
+2. By following the convention above, create a new target directory with appropriate name.
+Let's say you will augment the sources by applying '2 main augmentation skills' below.
+
+- rotation between (-15, 15) degrees
+- resizing into 300 X 300
+
+Then, please create following directories on your terminal. (Use '$ mkdir' commands)
+
+- 1_blade_rotated_15_resized (This should be the appropriate name)
+------ annotations
+------ images
+
+3. Finally, set our parameters below. 
+They surely help you to augment your source data like a monkey magic! :)
 '''
 
 
 # Step / Which type of augmentation do you want to apply? (Important! Will be repeatedly used below) 
-name_augmentation = "resize_centercrop_zero_paddded" # Augmentation type # TODO;
+name_augmentation = "valid" # Augmentation type # TODO;
 
-# Path for source images, and annotations, and masks
+
+
+# Path for images, and annotations 
 path_source = "../../../Media/v0/valid/" # Path where source images located # TODO;
+path_dest = "../../../Media/v0.5/" + name_augmentation + "/" # Path where augmented images located # TODO;
+os.makedirs(path_dest)
+
 path_source_images = path_source + "images" 
 path_source_annotations = path_source + "annotations"
-path_source_masks = path_source + "masks" 
-
-# Path for destination images, and annotations, and masks
-path_dest = "../../../Media/v5/valid/" + name_augmentation + "/" # Path where augmented images located # TODO;
-# os.makedirs(path_dest)
 
 path_dest_images = path_dest + "images"
 path_dest_annotations = path_dest + "annotations" 
-path_dest_masks = path_dest + "masks" 
-# os.makedirs(path_dest_images)
-# os.makedirs(path_dest_annotations)
-# os.makedirs(path_dest_masks)
+os.makedirs(path_dest_images)
+os.makedirs(path_dest_annotations)
 
 
 
@@ -55,6 +86,7 @@ print(dict_keys)
 js_dicts_images = json_data['images']
 js_dicts_annotations = json_data['annotations']
 print("number of original annotations : ", len(js_dicts_annotations))
+
 
 
 # Step / We want to create a new annotations file extracted from the original annotations file
@@ -73,16 +105,12 @@ list_images = os.listdir(path_source_images)
 
 
 # Construct an augmentation pipeline constructed
-width, height = 300, 300 # TODO;
+height, width = 300, 300 # TODO;
 
 transform = A.Compose([ # TODO;
-    A.Resize(width=300, height=533, interpolation=3),
-    A.CenterCrop(width=300,height=168, p=1),
-    A.CropAndPad(px=(66, 0, 66, 0), pad_mode=BORDER_CONSTANT, pad_cval=0, 
-            keep_size=False, sample_independently=False, p=1.0)
-    # A.ShiftScaleRotate(shift_limit=0, scale_limit=0, rotate_limit=15, p=1),
-    # A.HorizontalFlip(p=1)
-    # A.Rotate(limit=[15, 15], p=1)
+    A.Resize(height=300, width=300, interpolation=3),
+    A.CenterCrop(height=168, width=300),
+    A.CropAndPad(px=(66, 0, 66, 0), pad_mode=BORDER_CONSTANT, pad_cval=0, keep_size=False, sample_independently=False, p=1.0)
     ],
     bbox_params = A.BboxParams(format='coco', min_visibility=0, label_fields=['category_ids']),
 )
@@ -100,13 +128,11 @@ print("number of images : ", len(list_images))
 ids_dict_with_file_names = {}
 bboxes_dict_with_key_id = {}
 category_ids_dict_with_key_id = {}
-masks_dict_with_key_id = {}
 
 for dict in js_dicts_annotations:
     key = dict['image_id']
     bboxes_dict_with_key_id[key] = []
     category_ids_dict_with_key_id[key] = []
-    masks_dict_with_key_id[key] = []
 
 for dict in js_dicts_annotations:
     key = dict['image_id']
@@ -116,9 +142,6 @@ for dict in js_dicts_annotations:
 
     value = dict['category_id']
     category_ids_dict_with_key_id[key].append(value)
-
-    value = dict['segmentation'][0]
-    masks_dict_with_key_id[key].append(value)
 
 for dict in js_dicts_images:
     key = dict['file_name']
@@ -146,8 +169,8 @@ def binary_mask_to_rle(binary_mask):
         counts.append(len(list(elements)))
     return rle
 
-
 coco = COCO(path_source_annotations + "/" + old_ann_filename)
+
 
 # Step / Augment and Store new images, massks, annotations into a new directory
 for file_name in list_images:
@@ -156,12 +179,9 @@ for file_name in list_images:
 
     image_id = ids_dict_with_file_names[file_name]
 
-    # print("image_id: ", image_id)
-
     # Read original data before augmentation
     image = cv2.imread(path_source_images + '/' + file_name)
-    # segm_name = file_name.replace('jpg', 'png')
-    # segm = cv2.imread(path_source_masks + '/' + segm_name)
+
     bboxes = bboxes_dict_with_key_id[image_id]
     category_ids = category_ids_dict_with_key_id[image_id]
 
@@ -201,8 +221,6 @@ for file_name in list_images:
     new_img_info.append(img_dict)
     img_id += 1
 
-    annot_dicts = []
-
     # Append new "annotations" dictionary info; The otherse are maintained inside
     for ann in anns:
 
@@ -221,19 +239,10 @@ for file_name in list_images:
             "segmentation": [aug_zip[3]]
         }
         new_annot_info.append(annot_dict)
-        annot_dicts.append(annot_dict)
         annot_id += 1 
-
-    mask_name = file_name.replace('.jpg', '.png')
-
-    mask = np.max(np.stack([coco.annToMask(ann) * ann["category_id"] * 100 for ann in annot_dicts]), axis=0)
-
-    if file_name == '191228_105517_252.jpg': # TODO; Test with your own figure!
-        cv2.imwrite("hi.png", mask) # For test;
 
     # Write new data after augmentation
     cv2.imwrite(path_dest_images + "/" + file_name, augmentation_img) # TODO;
-    cv2.imwrite(path_dest_masks + "/" + mask_name, augmentation_mask) # TODO;
 
 
 # print("annot_info[0] : ", annot_info[0])
