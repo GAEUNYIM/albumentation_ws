@@ -100,10 +100,6 @@ js_dicts_new = json_data
 
 
 
-# Returns lists of the file names
-list_images = os.listdir(path_source_images)
-
-
 # Construct an augmentation pipeline constructed
 height, width = 168, 300 # TODO;
 
@@ -120,7 +116,7 @@ annot_id = 1
 new_img_info = []
 new_annot_info = []
 
-print("number of images : ", len(list_images))
+
 
 # Step / Create inversed dictionaries with "image_id"
 ids_dict_with_file_names = {}
@@ -168,6 +164,13 @@ def binary_mask_to_rle(binary_mask):
     return rle
 
 coco = COCO(path_source_annotations + "/" + old_ann_filename)
+
+
+
+
+# Returns lists of the file names
+list_images = os.listdir(path_source_images)
+print("number of images : ", len(list_images))
 
 
 # Step / Augment and Store new images, massks, annotations into a new directory

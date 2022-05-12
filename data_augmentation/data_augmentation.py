@@ -13,9 +13,9 @@ from itertools import groupby
 ##### Description : What is this code for? #####
 ################################################
 
-This code will help you to augment your data with padding images.
+This code will help you to augment your data with cropping images.
 Additionally, you can also create a _new annotation file_ by modifying the extra parameters 
-regarding the images that are affected by the padding (height, width, and box).
+regarding the images that are affected by the cropping (height, width, and box).
 Here, we are supporting only bbox, but not also segmentation for the extra parameters.
 
 ########################################################
@@ -56,13 +56,13 @@ They surely help you to augment your source data like a monkey magic! :)
 
 
 # Step / Which type of augmentation do you want to apply? (Important! Will be repeatedly used below) 
-name_augmentation = "valid" # Augmentation type # TODO;
+name_augmentation = "test2" # Augmentation type # TODO;
 
 
 
 # Path for images, and annotations 
-path_source = "../../../Media/v0/valid/" # Path where source images located # TODO;
-path_dest = "../../../Media/v0.6/" + name_augmentation + "/" # Path where augmented images located # TODO;
+path_source = "../../../Media/v0.3/valid/" # Path where source images located # TODO;
+path_dest = "../../../Media/v0.4/" + name_augmentation + "/" # Path where augmented images located # TODO;
 os.makedirs(path_dest)
 
 path_source_images = path_source + "images" 
@@ -105,11 +105,10 @@ list_images = os.listdir(path_source_images)
 
 
 # Construct an augmentation pipeline constructed
-height, width = 300, 300 # TODO;
+height, width = 168, 300 # TODO;
 
 transform = A.Compose([ # TODO;
-    A.CenterCrop(height=288, width=512),
-    A.Resize(height=300, width=300, interpolation=3),
+    A.CenterCrop(height=height, width=width)
     ],
     bbox_params = A.BboxParams(format='coco', min_visibility=0, label_fields=['category_ids']),
 )
@@ -175,73 +174,45 @@ coco = COCO(path_source_annotations + "/" + old_ann_filename)
 for file_name in list_images:
 
     # if file_name == '191228_105517_252.jpg': # TODO; Test with your own figure!
+    if file_name == '200121_114652_736.jpg':
 
-    image_id = ids_dict_with_file_names[file_name]
+        # Read original data before augmentation
+        image = cv2.imread(path_source_images + '/' + file_name)
+        image_id = ids_dict_with_file_names[file_name]
+        bboxes = bboxes_dict_with_key_id[image_id]
+        category_ids = category_ids_dict_with_key_id[image_id]
 
-    # Read original data before augmentation
-    image = cv2.imread(path_source_images + '/' + file_name)
-
-    bboxes = bboxes_dict_with_key_id[image_id]
-    category_ids = category_ids_dict_with_key_id[image_id]
-
-    ann_ids = coco.getAnnIds(imgIds=image_id)
-    anns = coco.loadAnns(ann_ids) 
-
-    augmentation_zip = {} # Key : ann_id, Value : [cat_id, segmentation] 
-
-    # Create new objects that are augmented
-    for ann in anns:
-        mask = coco.annToMask(ann)
-        cat_id = ann["category_id"]
-        ann_id = ann["id"]
-
-        augmentations = transform(image=image, bboxes=bboxes, mask=mask, category_ids=category_ids) # WARN : Mask should be ndarray !!!
-        augmentation_img = augmentations["image"] # BUG : Image is only one
-        augmentation_mask = augmentations["mask"] # Array filled with 0, 1, 2, 3
-
-        fortran_ground_truth_binary_mask = np.asfortranarray(augmentation_mask) # Problem
-        encoded_ground_truth = pm.encode(fortran_ground_truth_binary_mask) # RLE Object?
-        area = float(pm.area(encoded_ground_truth))
-        bbox = list(pm.toBbox(encoded_ground_truth))
-
-        segmentation = binary_mask_to_rle(fortran_ground_truth_binary_mask)
-        # print(segmentation)
-
-        augmentation_zip[ann_id] = [cat_id, area, bbox, segmentation]
+        augmentations = transform(image=image, bboxes=bboxes, category_ids=category_ids)
+        augmentation_img = augmentations["image"]
+        augmentation_bboxes = augmentations["bboxes"]
 
 
-    # Append new "images" dictionary info; The otherse are maintained inside
-    img_dict = {
-        "file_name": file_name,
-        "height": 300,
-        "width": 300,
-        "id": image_id
-    }
-    new_img_info.append(img_dict)
-    img_id += 1
-
-    # Append new "annotations" dictionary info; The otherse are maintained inside
-    for ann in anns:
-
-        ann_id = ann["id"]
-        aug_zip = augmentation_zip[ann_id]
-        # contour = np.flip(contour, axis=1)
-        # segmentation = contour.ravel().tolist()
-
-        annot_dict = {
-            "bbox" : aug_zip[2], # Changed;
-            "category_id": aug_zip[0],
-            "id": annot_id, # Increased;
-            "iscrowd": 0, # Fixed;
-            "area": aug_zip[1], #js_dicts_annotations[i]['area'],
-            "image_id": image_id,
-            "segmentation": [aug_zip[3]]
+        # Append new "images" dictionary info; The otherse are maintained inside
+        img_dict = {
+            "file_name": file_name,
+            "height": 168,
+            "width": 300,
+            "id": image_id
         }
-        new_annot_info.append(annot_dict)
-        annot_id += 1 
+        new_img_info.append(img_dict)
+        img_id += 1
 
-    # Write new data after augmentation
-    cv2.imwrite(path_dest_images + "/" + file_name, augmentation_img) # TODO;
+        # Append new "annotations" dictionary info; The otherse are maintained inside
+        for bbox, cat_id in zip(augmentation_bboxes, category_ids):
+            annot_dict = {
+                "bbox" : bbox, # Changed;
+                "category_id": cat_id,
+                "id": annot_id, # Increased;
+                "iscrowd": 0, # Fixed;
+                "area": 0, #js_dicts_annotations[i]['area'],
+                "image_id": image_id,
+                "segmentation": [], #js_dicts_annotations[i]['segmentation']
+            }
+            new_annot_info.append(annot_dict)
+            annot_id += 1
+
+        # Write new data after augmentation
+        cv2.imwrite(path_dest_images + "/" + file_name, augmentation_img) # TODO;
 
 
 # print("annot_info[0] : ", annot_info[0])

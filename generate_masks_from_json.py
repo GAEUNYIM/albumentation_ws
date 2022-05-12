@@ -8,7 +8,7 @@ from pycocotools.coco import COCO
 
 
 # Step / Set paths # TODO;
-path_source = "../../Media/v0/valid/" 
+path_source = "../../Media/v0.3/valid/" 
 path_source_images = path_source + "images"
 path_source_annotations = path_source + "annotations"
 path_source_masks = path_source + "masks"
@@ -54,20 +54,21 @@ coco_data = COCO(path_source_annotations + '/' + ann_filename)
 # Step / get annotation ids list of file image
 for file_name in list_images:
     
-    # if file_name == "191228_105517_252.jpg": # Test with this comlex figure
+    if file_name == '200121_114652_736.jpg':
+        # "191228_105517_252.jpg": # Test with this comlex figure
 
-    # Get image id from file_name
-    image_id = ids_dict_with_file_names[file_name]
-    
-    # Get annotation ids from file_name
-    ann_ids = coco_data.getAnnIds(imgIds=image_id)
-    
-    # Load annotation dictionaries from annotation ids
-    anns = coco_data.loadAnns(ann_ids)
-    for ann in anns:
-        mask = np.max(np.stack([coco_data.annToMask(ann) * ann["category_id"] for ann in anns]), axis=0)
-    
-    mask_name = file_name.replace('.jpg', '.png')
+        # Get image id from file_name
+        image_id = ids_dict_with_file_names[file_name]
+        
+        # Get annotation ids from file_name
+        ann_ids = coco_data.getAnnIds(imgIds=image_id)
+        
+        # Load annotation dictionaries from annotation ids
+        anns = coco_data.loadAnns(ann_ids)
+        for ann in anns:
+            mask = np.max(np.stack([coco_data.annToMask(ann) * ann["category_id"] * 100 for ann in anns]), axis=0)
+        
+        mask_name = file_name.replace('.jpg', '.png')
 
-    # cv2.imwrite(mask_name, mask)
-    cv2.imwrite(path_source_masks + "/" + mask_name, mask)
+        # cv2.imwrite(mask_name, mask)
+        cv2.imwrite(mask_name, mask)
