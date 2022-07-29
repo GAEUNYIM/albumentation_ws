@@ -7,6 +7,7 @@ from pycocotools.coco import COCO
 import pycocotools.mask as pm
 import numpy as np
 from itertools import groupby
+import math
 
 '''
 ################################################
@@ -56,13 +57,13 @@ They surely help you to augment your source data like a monkey magic! :)
 
 
 # Step / Which type of augmentation do you want to apply? (Important! Will be repeatedly used below) 
-name_augmentation = "valid" # Augmentation type # TODO;
+name_augmentation = "ratio_1_1" # Augmentation type # TODO;
 
 
 
 # Path for images, and annotations 
-path_source = "../../../Media/v0/valid/" # Path where source images located # TODO;
-path_dest = "../../../Media/v0.5/" + name_augmentation + "/" # Path where augmented images located # TODO;
+path_source = "../../../Media/v0/train/" # Path where source images located # TODO;
+path_dest = "../../../Media/v6/train/" + name_augmentation + "/" # Path where augmented images located # TODO;
 os.makedirs(path_dest)
 
 path_source_images = path_source + "images" 
@@ -105,12 +106,12 @@ list_images = os.listdir(path_source_images)
 
 
 # Construct an augmentation pipeline constructed
-height, width = 300, 300 # TODO;
+height, width = 320, 320 # TODO;
 
 transform = A.Compose([ # TODO;
-    A.Resize(height=300, width=300, interpolation=3),
-    A.CenterCrop(height=168, width=300),
-    A.CropAndPad(px=(66, 0, 66, 0), pad_mode=BORDER_CONSTANT, pad_cval=0, keep_size=False, sample_independently=False, p=1.0)
+    A.Resize(height=320, width=320, interpolation=3),
+    # A.CenterCrop(height=240, width=320),
+    # A.CropAndPad(px=(40, 0, 40, 0), pad_mode=BORDER_CONSTANT, pad_cval=0, keep_size=False, sample_independently=False, p=1.0)
     ],
     bbox_params = A.BboxParams(format='coco', min_visibility=0, label_fields=['category_ids']),
 )
@@ -214,8 +215,8 @@ for file_name in list_images:
     # Append new "images" dictionary info; The otherse are maintained inside
     img_dict = {
         "file_name": file_name,
-        "height": 300,
-        "width": 300,
+        "height": 320,
+        "width": 320,
         "id": image_id
     }
     new_img_info.append(img_dict)

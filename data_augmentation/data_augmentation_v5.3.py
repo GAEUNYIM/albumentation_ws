@@ -6,7 +6,11 @@ from cv2 import BORDER_CONSTANT
 from pycocotools.coco import COCO
 import pycocotools.mask as pm
 import numpy as np
+from tqdm import tqdm
 from itertools import groupby
+import math
+from random import uniform
+from random import seed
 
 '''
 ################################################
@@ -62,7 +66,7 @@ name_augmentation = "valid" # Augmentation type # TODO;
 
 # Path for images, and annotations 
 path_source = "../../../Media/v0/valid/" # Path where source images located # TODO;
-path_dest = "../../../Media/v0.6/" + name_augmentation + "/" # Path where augmented images located # TODO;
+path_dest = "../../../Media/v7/" + name_augmentation + "/" # Path where augmented images located # TODO;
 os.makedirs(path_dest)
 
 path_source_images = path_source + "images" 
@@ -104,16 +108,33 @@ js_dicts_new = json_data
 list_images = os.listdir(path_source_images)
 
 
-# Construct an augmentation pipeline constructed
-height, width = 300, 300 # TODO;
+# Choose a random number from 0 to 3
+seed(1)
 
-transform = A.Compose([ # TODO;
-    A.CenterCrop(height=288, width=512),
-    A.Resize(height=300, width=300, interpolation=3),
+# Construct an augmentation pipeline constructed
+height, width = 320, 320 # TODO;
+
+transform_0 = A.Compose([ # TODO;
+    A.Resize(height=320, width=320, interpolation=3),
+    A.CenterCrop(height=180, width=320),
+    A.CropAndPad(px=(70, 0, 70, 0), pad_mode=BORDER_CONSTANT, pad_cval=0, keep_size=False, sample_independently=False, p=1.0)
     ],
     bbox_params = A.BboxParams(format='coco', min_visibility=0, label_fields=['category_ids']),
 )
 
+transform_1 = A.Compose([ # TODO;
+    A.Resize(height=320, width=320, interpolation=3),
+    A.CenterCrop(height=240, width=320),
+    A.CropAndPad(px=(40, 0, 40, 0), pad_mode=BORDER_CONSTANT, pad_cval=0, keep_size=False, sample_independently=False, p=1.0)
+    ],
+    bbox_params = A.BboxParams(format='coco', min_visibility=0, label_fields=['category_ids']),
+)
+
+transform_2 = A.Compose([ # TODO;
+    A.Resize(height=320, width=320, interpolation=3),
+    ],
+    bbox_params = A.BboxParams(format='coco', min_visibility=0, label_fields=['category_ids']),
+)
 
 # Define img & annotation id
 img_id = 1
@@ -172,7 +193,7 @@ coco = COCO(path_source_annotations + "/" + old_ann_filename)
 
 
 # Step / Augment and Store new images, massks, annotations into a new directory
-for file_name in list_images:
+for file_name in tqdm(list_images):
 
     # if file_name == '191228_105517_252.jpg': # TODO; Test with your own figure!
 
@@ -195,7 +216,14 @@ for file_name in list_images:
         cat_id = ann["category_id"]
         ann_id = ann["id"]
 
-        augmentations = transform(image=image, bboxes=bboxes, mask=mask, category_ids=category_ids) # WARN : Mask should be ndarray !!!
+        code = math.floor(uniform(0.0, 3.0))
+        if code == 0: # 16:9
+            augmentations = transform_0(image=image, bboxes=bboxes, mask=mask, category_ids=category_ids) # WARN : Mask should be ndarray !!!
+        elif code == 1:
+            augmentations = transform_1(image=image, bboxes=bboxes, mask=mask, category_ids=category_ids) # WARN : Mask should be ndarray !!!
+        elif code == 2:
+            augmentations = transform_2(image=image, bboxes=bboxes, mask=mask, category_ids=category_ids) # WARN : Mask should be ndarray !!!
+        
         augmentation_img = augmentations["image"] # BUG : Image is only one
         augmentation_mask = augmentations["mask"] # Array filled with 0, 1, 2, 3
 
@@ -204,7 +232,7 @@ for file_name in list_images:
         area = float(pm.area(encoded_ground_truth))
         bbox = list(pm.toBbox(encoded_ground_truth))
 
-        segmentation = binary_mask_to_rle(fortran_ground_truth_binary_mask) # RLE
+        segmentation = binary_mask_to_rle(fortran_ground_truth_binary_mask)
         # print(segmentation)
 
         augmentation_zip[ann_id] = [cat_id, area, bbox, segmentation]
@@ -213,8 +241,8 @@ for file_name in list_images:
     # Append new "images" dictionary info; The otherse are maintained inside
     img_dict = {
         "file_name": file_name,
-        "height": 300,
-        "width": 300,
+        "height": 320,
+        "width": 320,
         "id": image_id
     }
     new_img_info.append(img_dict)

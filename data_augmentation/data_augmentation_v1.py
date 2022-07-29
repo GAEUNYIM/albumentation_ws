@@ -56,13 +56,13 @@ They surely help you to augment your source data like a monkey magic! :)
 
 
 # Step / Which type of augmentation do you want to apply? (Important! Will be repeatedly used below) 
-name_augmentation = "rotated" # Augmentation type # TODO;
+name_augmentation = "valid" # Augmentation type # TODO;
 
 
 
 # Path for images, and annotations 
-path_source = "../../../Media/v0.1/valid/per_case/blade/" # Path where source images located # TODO;
-path_dest = "../../../Media/v0.1/valid/per_case/" + name_augmentation + "/" # Path where augmented images located # TODO;
+path_source = "../../../Media/v7/train/" # Path where source images located # TODO;
+path_dest = "../../../Media/v8/" + name_augmentation + "/" # Path where augmented images located # TODO;
 os.makedirs(path_dest)
 
 path_source_images = path_source + "images" 
@@ -105,10 +105,11 @@ list_images = os.listdir(path_source_images)
 
 
 # Construct an augmentation pipeline constructed
-height, width = 512, 512 # TODO;
+height, width = 320, 320 # TODO;
 
 transform = A.Compose([ # TODO;
-    A.Rotate(limit=[-15, 15], p=1)
+    # A.Resize(height=height, width=width, interpolation=3),
+    A.Rotate(limit=[90, 90], p=1)
     ],
     bbox_params = A.BboxParams(format='coco', min_visibility=0, label_fields=['category_ids']),
 )
@@ -212,8 +213,8 @@ for file_name in list_images:
     # Append new "images" dictionary info; The otherse are maintained inside
     img_dict = {
         "file_name": file_name,
-        "height": 512,
-        "width": 512,
+        "height": 320,
+        "width": 320,
         "id": image_id
     }
     new_img_info.append(img_dict)
